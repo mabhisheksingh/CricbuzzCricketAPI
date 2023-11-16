@@ -1,7 +1,27 @@
 server:
   port: 8081
-
+  address: 127.0.0.1
 
 spring:
   main:
     allow-bean-definition-overriding: true
+  application:
+    name: CricketAPIs
+  output:
+    ansi:
+      enabled: ALWAYS
+
+logging:
+  file:
+    name: "/home/abhishek/Desktop/Code/CricketCrickBuzzAPI/logs/cricket.log"
+    path: "/home/abhishek/Desktop/Code/CricketCrickBuzzAPI/logs/"
+  level:
+    #    root: INFO
+    com.cricketcrickbuzz: DEBUG
+  #    performance.*: DEBUG
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  logback.rollingpolicy.max-history: 7
+
+
+
