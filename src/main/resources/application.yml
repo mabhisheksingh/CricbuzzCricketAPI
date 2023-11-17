@@ -10,6 +10,10 @@ spring:
   output:
     ansi:
       enabled: ALWAYS
+  data:
+    redis:
+      port: 6379
+      host: 172.17.0.1
 
 logging:
   file:
@@ -23,5 +27,7 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   logback.rollingpolicy.max-history: 7
 
+
+CRICK_BUZZ_BASE_URL: "https://cricbuzz-cricket.p.rapidapi.com"
 
 
