@@ -29,23 +29,13 @@ public class MatchesHandler {
     public void init(){
         this.webClient = WebClient.builder().baseUrl(baseURL).build();
     }
-//    OkHttpClient client = new OkHttpClient();
-//
-//    Request request = new Request.Builder()
-//            .url("https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live")
-//            .get()
-//            .addHeader("X-RapidAPI-Key", "488a1af9edmsh4edb03197cbf363p16bfd8jsna6633427e868")
-//            .addHeader("X-RapidAPI-Host", "cricbuzz-cricket.p.rapidapi.com")
-//            .build();
-//
-//    Response response = client.newCall(request).execute();
+
     public Mono<ServerResponse>  getList(ServerRequest serverRequest){
         List<String> supportParameterList = Arrays.asList("live","recent","upcoming");
         String type = serverRequest.pathVariable("type");
         if( !supportParameterList.contains( type ) ){
             return ServerResponse.badRequest().bodyValue("Supported path were "+ supportParameterList);
         }
-//        System.out.println("Type : "+type);
          Mono<Object> res =webClient
                 .get()
                 .uri("/matches/v1/"+type)
