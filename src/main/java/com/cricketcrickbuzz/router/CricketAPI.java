@@ -118,12 +118,11 @@ public class CricketAPI {
                 ).filter(((request, next) -> {
                     long startTime = System.currentTimeMillis();
                     CustomLogger.logInRequest(request);
-                    System.out.println("STEP FILTER " + startTime);
                     return next.handle(request)
                             .doOnSuccess(result -> {
                                 long endTime = System.currentTimeMillis();
                                 Float executionTime = (endTime - startTime)/1_000f;
-                                logger.info("M Request path: {}, Execution time: {} ms", request.exchange().getRequest(), executionTime);
+                                logger.info("Request path: {}, Execution time: {} ms", request.exchange().getRequest(), executionTime);
                                 CustomLogger.logOutRequest(request, result);
                             })
                             .doOnError(throwable -> {
