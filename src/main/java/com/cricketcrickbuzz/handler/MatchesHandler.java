@@ -1,8 +1,11 @@
 package com.cricketcrickbuzz.handler;
 
 
+import com.cricketcrickbuzz.advice.TrackMethodExecutionTime;
+import io.micrometer.core.annotation.Timed;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,6 +13,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -30,6 +34,8 @@ public class MatchesHandler {
         this.webClient = WebClient.builder().baseUrl(baseURL).build();
     }
 
+    @TrackMethodExecutionTime
+//    @Timed
     public Mono<ServerResponse>  getList(ServerRequest serverRequest){
         List<String> supportParameterList = Arrays.asList("live","recent","upcoming");
         String type = serverRequest.pathVariable("type");
@@ -42,7 +48,8 @@ public class MatchesHandler {
                 .header("X-RapidAPI-Key", cricketAPIKey)
                 .header("X-RapidAPI-Host", cricketAPIHost)
                 .retrieve()
-                .bodyToMono(Object.class);
+                .bodyToMono(Object.class)
+                 .delayElement(Duration.ofSeconds(2));
         return res
                 .flatMap( r ->ServerResponse.ok().bodyValue(r));
 

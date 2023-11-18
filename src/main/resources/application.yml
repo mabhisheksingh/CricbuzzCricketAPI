@@ -29,3 +29,7 @@ logging:
 
 
 CRICK_BUZZ_BASE_URL: "https://cricbuzz-cricket.p.rapidapi.com"
+keys:
+  cricket:
+    X-RapidAPI-Key: '488a1af9edmsh4edb03197cbf363p16bfd8jsna6633427e868'
+    X-RapidAPI-Host: "cricbuzz-cricket.p.rapidapi.com"

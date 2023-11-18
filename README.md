@@ -1,7 +1,7 @@
 # CricbuzzCricketAPI
-Cricbuzz Cricket API is built on reactive Spring boot Webflux is api URL is [Rapid API URL for crickbuzz](https://rapidapi.com/cricketapilive/api/cricbuzz-cricket)
+Cricbuzz Cricket API is built on reactive Spring boot Web-flux is api URL is [Rapid API URL for crickbuzz](https://rapidapi.com/cricketapilive/api/cricbuzz-cricket)
 
-## here i am using crickbuzz api and in place of model i am using Object class as a DTO global logging and exception handling already implemented
+## here i am using crick buzz api and in place of model i am using Object class as a DTO global logging and exception handling already implemented
 
 
 ### Bug in docker compose working only spring boot > 3.1.5 because when u will use docker compose in 3.1.5 u will get below error.
@@ -59,5 +59,205 @@ java.lang.NullPointerException: Cannot invoke "org.springframework.boot.docker.c
 
 
 Process finished with exit code 0
+
+```
+
+## Implement centralized logging
+### We can implement it at method level with the help of Spring AOP and custom annotation with the help of below example.
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+```
+#### Creating custom annotation for Logging
+
+```java
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+/*
+@Retention(RetentionPolicy.RUNTIME) specifies the retention policy of the annotation. In this case, it indicates that the annotation information should be available at 
+runtime through reflection (useful for runtime processing).
+@Target({ElementType.METHOD, ElementType.TYPE}) specifies the valid targets for the custom annotation. In this example, the CustomAnnotation can be applied to 
+methods (ElementType.METHOD) and types/classes (ElementType.TYPE).
+The ElementType enum provides several constants representing various program elements to which annotations may be applied. Some common types include:
+
+ElementType.TYPE: Annotation can be applied to classes, interfaces, enums, etc.
+ElementType.FIELD: Annotation can be applied to fields (member variables).
+ElementType.METHOD: Annotation can be applied to methods.
+ElementType.PARAMETER: Annotation can be applied to method parameters.
+And more, like PACKAGE, CONSTRUCTOR, LOCAL_VARIABLE, and ANNOTATION_TYPE.
+For instance, by specifying @Target(ElementType.METHOD), you limit your custom annotation to only be used on methods, while @Target(ElementType.TYPE) restricts 
+it to class-level usage. Multiple types can be specified within the @Target annotation using an array, as demonstrated in the example.
+ * */
+@Target(ElementType.METHOD) 
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TrackMethodExecutionTime {
+}
+
+```
+
+#### What annotation will do when we call it at method level
+```java
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+@Aspect
+@Component
+public class LoggerAdvice {
+    Logger logger = LoggerFactory.getLogger(LoggerAdvice.class);
+
+    @Around("@annotation(com.cricketcrickbuzz.advice.TrackMethodExecutionTime)")
+    public Object executionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        Long startTime = System.currentTimeMillis();
+        Object proceed = joinPoint.proceed();
+        if (proceed instanceof Mono) {
+            return ((Mono<?>) proceed)
+                    .doOnSuccess(result -> {
+                        long executionTime = System.currentTimeMillis() - startTime;
+                        logger.info("{} executed in {} ms", joinPoint.getSignature(), executionTime/1_000f);
+                    })
+                    .doOnError(throwable -> {
+                        long executionTime = System.currentTimeMillis() - startTime;
+                        logger.error("{} execution failed in {} ms with error: {}", joinPoint.getSignature(), executionTime, throwable.getMessage());
+                    });
+        } else {
+            long executionTime = System.currentTimeMillis() - startTime;
+            logger.info("{} executed in {} ms", joinPoint.getSignature(), executionTime/1_000f);
+
+            return proceed;
+        }
+    }
+
+}
+```
+
+### After creating above two class How we can use it in out code.
+
+```java
+import com.cricketcrickbuzz.advice.TrackMethodExecutionTime;
+import io.micrometer.core.annotation.Timed;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Supplier;
+
+@Service
+public class MatchesHandler {
+    
+    @TrackMethodExecutionTime
+    public Mono<ServerResponse>  getList(ServerRequest serverRequest){
+        // Business logic
+        return ServerResponse.ok().build();
+
+    }
+}
+
+```
+
+### We can implement it at a WebFilter level below given example.
+*Note* When we use both functional filter and traditional filter the priority 1 it will handle by Web-filter then it will hit by RouterFunctions.route().filter() method.
+```java
+// It will automatically track request and make a log for that request.
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
+
+@Component
+@Order(1)
+public class GlobalExecutionTimeFilter implements WebFilter {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExecutionTimeFilter.class);
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        long startTime = System.currentTimeMillis();
+        return chain.filter(exchange).doFinally(signal -> {
+            long endTime = System.currentTimeMillis();
+            long executionTime = endTime - startTime;
+            logger.info("Request path: {}, Execution time: {} ms", exchange.getRequest().getPath(), executionTime);
+        });
+    }
+}
+```
+
+### We can implement it at a RouterFunctions level with minimum code given example.
+```java
+import com.cricketcrickbuzz.handler.MatchesHandler;
+import com.cricketcrickbuzz.utils.CustomLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.server.*;
+import reactor.core.publisher.Mono;
+
+@Configuration
+public class CricketAPI {
+    Logger logger = LoggerFactory.getLogger(CricketAPI.class);
+    private MatchesHandler matchesHandler;
+
+    public CricketAPI(MatchesHandler matchesHandler) {
+        this.matchesHandler = matchesHandler;
+    }
+
+
+    public RouterFunction<ServerResponse> cricketCrickBuzzAPI() {
+        return RouterFunctions.route()
+                .path("/matches", builder -> builder
+                        .nest(RequestPredicates.accept(MediaType.APPLICATION_JSON), routerPath ->
+                                routerPath
+                                        .GET("/list/{type}", matchesHandler::getList)
+                        )
+                ).filter(((request, next) -> {
+                    long startTime = System.currentTimeMillis();
+                    CustomLogger.logInRequest(request);
+                    System.out.println("STEP FILTER " + startTime);
+                    return next.handle(request)
+                            .doOnSuccess(result -> {
+                                long endTime = System.currentTimeMillis();
+                                Float executionTime = (endTime - startTime)/1_000f;
+                                logger.info("M Request path: {}, Execution time: {} ms", request.exchange().getRequest(), executionTime);
+                                CustomLogger.logOutRequest(request, result);
+                            })
+                            .doOnError(throwable -> {
+                                long endTime = System.currentTimeMillis();
+                                Float executionTime = (endTime - startTime)/1_000f;
+                                logger.info("M Request path: {}, Execution time: {} ms", request.exchange().getRequest(), executionTime);
+                                CustomLogger.logOutRequest(request, throwable);
+                            });
+                }))
+
+                .build();
+    }
+
+
+    private Mono<ServerResponse> get(ServerRequest sr) {
+        return ServerResponse
+                .ok()
+                .bodyValue("sas");
+    }
+
+}
 
 ```

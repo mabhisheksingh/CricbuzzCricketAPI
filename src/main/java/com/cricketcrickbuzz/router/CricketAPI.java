@@ -2,6 +2,8 @@ package com.cricketcrickbuzz.router;
 
 import com.cricketcrickbuzz.handler.MatchesHandler;
 import com.cricketcrickbuzz.utils.CustomLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.*;
@@ -9,8 +11,10 @@ import reactor.core.publisher.Mono;
 
 @Configuration
 public class CricketAPI {
+    Logger logger = LoggerFactory.getLogger(CricketAPI.class);
     private MatchesHandler matchesHandler;
-    public CricketAPI(MatchesHandler matchesHandler){
+
+    public CricketAPI(MatchesHandler matchesHandler) {
         this.matchesHandler = matchesHandler;
     }
 
@@ -111,15 +115,24 @@ public class CricketAPI {
                                         .GET("/get-record-filters", this::get)
                                         .GET("/get-record", this::get)
                         )
-                )
-                .before((serverRequest) ->{
-                    CustomLogger.logInRequest(serverRequest);
-                    return serverRequest;
-                } )
-                .after((serverRequest, serverResponse) -> {
-                    CustomLogger.logOutRequest(serverRequest,serverResponse);
-                    return serverResponse;
-                })
+                ).filter(((request, next) -> {
+                    long startTime = System.currentTimeMillis();
+                    CustomLogger.logInRequest(request);
+                    System.out.println("STEP FILTER " + startTime);
+                    return next.handle(request)
+                            .doOnSuccess(result -> {
+                                long endTime = System.currentTimeMillis();
+                                Float executionTime = (endTime - startTime)/1_000f;
+                                logger.info("M Request path: {}, Execution time: {} ms", request.exchange().getRequest(), executionTime);
+                                CustomLogger.logOutRequest(request, result);
+                            })
+                            .doOnError(throwable -> {
+                                long endTime = System.currentTimeMillis();
+                                Float executionTime = (endTime - startTime)/1_000f;
+                                logger.info("M Request path: {}, Execution time: {} ms", request.exchange().getRequest(), executionTime);
+                                CustomLogger.logOutRequest(request, throwable);
+                            });
+                }))
 
                 .build();
     }
@@ -130,5 +143,5 @@ public class CricketAPI {
                 .ok()
                 .bodyValue("sas");
     }
-    
+
 }

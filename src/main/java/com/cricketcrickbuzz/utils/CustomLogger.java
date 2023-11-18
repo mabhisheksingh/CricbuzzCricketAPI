@@ -17,10 +17,16 @@ public class CustomLogger {
         // org.springframework.web.reactive.function.server.RouterFunctions.matchingPattern]
         logger.info("Id: {}, URL PATH {}, Http headers {}, path variables {}, calling method  {}, matchingPattern :{} ",sr.attributes().get("org.springframework.web.server.ServerWebExchange.LOG_ID"),sr.path(),sr.headers(),
                 sr.pathVariables(), sr.method() ,sr.attributes().get("org.springframework.web.reactive.function.server.RouterFunctions.matchingPattern") );
-        logger.info(sr.attributes().toString());
+//        logger.info(sr.attributes().toString());
     }
     public static void logOutRequest(ServerRequest serverRequest, ServerResponse sr){
         logger.info("Id: {}, response status code {}, Http headers {}, path variables {}",serverRequest.attributes().get("org.springframework.web.server.ServerWebExchange.LOG_ID"),sr.statusCode(),sr.headers(), sr.toString() );
+//        logger.info(sr.toString());
+//        logger.info(serverRequest.);
+    }
+
+    public static void logOutRequest(ServerRequest serverRequest, Throwable sr){
+        logger.info("Id: {}, response status code {}, path variables {}",serverRequest.attributes().get("org.springframework.web.server.ServerWebExchange.LOG_ID"),sr.getMessage(), sr.toString() );
 //        logger.info(sr.toString());
 //        logger.info(serverRequest.);
     }
