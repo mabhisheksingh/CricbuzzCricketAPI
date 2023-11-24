@@ -16,10 +16,10 @@ public class CustomLogger {
         // org.springframework.web.reactive.HandlerMapping.uriTemplateVariables,
         // org.springframework.web.server.ServerWebExchange.LOG_ID,
         // org.springframework.web.reactive.function.server.RouterFunctions.matchingPattern]
-        logger.info("Id: {}, URL PATH {}, Http headers {}, path variables {}, calling method  {}, matchingPattern :{} ",
-                sr.attributes().get("org.springframework.web.server.ServerWebExchange.LOG_ID"), sr.path(), sr.headers(),
+        logger.info("Id: {}, URL PATH {}, path variables {}, calling method  {}, matchingPattern :{}, Http headers {},",
+                sr.attributes().get("org.springframework.web.server.ServerWebExchange.LOG_ID"), sr.path(),
                 sr.pathVariables(), sr.method(), sr.attributes()
-                        .get("org.springframework.web.reactive.function.server.RouterFunctions.matchingPattern"));
+                        .get("org.springframework.web.reactive.function.server.RouterFunctions.matchingPattern"), sr.headers());
         // logger.info(sr.attributes().toString());
     }
 

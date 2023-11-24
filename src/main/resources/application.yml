@@ -2,30 +2,43 @@ server:
   port: 8081
   address: 127.0.0.1
 
+
 spring:
-  main:
-    allow-bean-definition-overriding: true
+  boot:
+    admin:
+      client:
+        auto-registration: true
+        enabled: true
+        url: http://localhost:9000
+        instance:
+          name: my-client-1
   application:
     name: CricketAPIs
   output:
     ansi:
       enabled: ALWAYS
-  data:
-    redis:
-      port: 6379
-      host: 172.17.0.1
+  cache:
+#    type: redis
+    cache-names: schedules,matches,series
+
+# management:
+#   endpoint:
+#     health:
+#       show-details: always
+#   endpoints:
+#     web:
+#       exposure:
+#         include: "*"
 
 logging:
-  file:
-    name: "/home/abhishek/Desktop/Code/CricketCrickBuzzAPI/logs/cricket.log"
-    path: "/home/abhishek/Desktop/Code/CricketCrickBuzzAPI/logs/"
+  logback:
+    rollingpolicy:
+      max-file-size: 1MB
   level:
-    #    root: INFO
-    com.cricketcrickbuzz: DEBUG
-  #    performance.*: DEBUG
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  logback.rollingpolicy.max-history: 7
+    org.springframework.cache: TRACE
+  file:
+    name: /home/abhishek/Desktop/Code/CricketCrickBuzzAPI/logs/myLog.log
+#    root: DEBUG
 
 
 CRICK_BUZZ_BASE_URL: "https://cricbuzz-cricket.p.rapidapi.com"
@@ -33,3 +46,4 @@ keys:
   cricket:
     X-RapidAPI-Key: '488a1af9edmsh4edb03197cbf363p16bfd8jsna6633427e868'
     X-RapidAPI-Host: "cricbuzz-cricket.p.rapidapi.com"
+

@@ -3,7 +3,7 @@ services:
     image: redis:latest
     container_name: my-redis-container
     ports:
-      - "6380:6379"
+      - "6379:6379"
     restart: unless-stopped
     volumes:
       - redis_volume:/data
@@ -11,7 +11,7 @@ services:
     image: redislabs/redisinsight
     container_name: my-redis-insight
     ports:
-      - "6381:8001"
+      - "6382:8001"
     volumes:
       - redisinsight_volume:/db
 
